@@ -1,0 +1,4 @@
+.pio/
+.DS_Store
+*.uf2
+firmware.zip

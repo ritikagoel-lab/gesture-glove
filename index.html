@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gesture Glove</title>
+<style>
+  :root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; background:#0c1218; color:#e8f3f4; }
+  * { box-sizing:border-box; }
+  body { margin:0; }
+  main { width:min(1080px, 100% - 36px); margin:clamp(24px,7vh,78px) auto; }
+  header { display:flex; flex-wrap:wrap; align-items:end; justify-content:space-between; gap:18px; margin-bottom:24px; }
+  h1 { margin:0; font-size:clamp(34px,6vw,60px); letter-spacing:-.065em; line-height:1; }
+  p { margin:8px 0 0; color:#a9bec6; line-height:1.5; }
+  .actions { display:flex; flex-wrap:wrap; gap:8px; }
+  button { font:inherit; font-size:14px; font-weight:650; border:1px solid #354b54; border-radius:8px; background:#1b2931; color:inherit; padding:11px 15px; cursor:pointer; }
+  button.primary { background:#77e1cb; color:#0c2926; border-color:#77e1cb; }
+  button:disabled { opacity:.46; cursor:default; }
+  button:focus-visible { outline:2px solid #b9fff2; outline-offset:3px; }
+  .panel { background:#101b24; border:1px solid #2a3c47; border-radius:15px; overflow:hidden; }
+  .status { display:flex; align-items:center; gap:10px; min-height:54px; border-bottom:1px solid #2a3c47; padding:12px 18px; color:#b8cdd2; font-size:14px; }
+  .dot { width:8px; height:8px; border-radius:50%; background:#68818c; flex:none; }
+  .live .dot { background:#77e1cb; box-shadow:0 0 10px #77e1cb80; }
+  .error .dot { background:#ffc186; }
+  canvas { display:block; width:100%; height:clamp(300px,56vh,540px); background:radial-gradient(ellipse at center,#1b3340,#101b24 74%); }
+  .readouts { display:grid; grid-template-columns:repeat(3,1fr); border-top:1px solid #2a3c47; }
+  .readouts section { padding:14px 18px; min-width:0; }
+  .readouts section + section { border-left:1px solid #2a3c47; }
+  h2 { margin:0 0 8px; color:#a9bec6; font-size:12px; font-weight:650; }
+  output { font:13px ui-monospace, monospace; color:#daf8f3; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+  .motion { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:12px 18px; border-top:1px solid #2a3c47; }
+  .motion-axis { display:grid; grid-template-columns:auto 1.4em 1fr; gap:6px; align-items:center; color:#a9bec6; font-size:13px; }
+  .motion-glyph { font-size:23px; line-height:1; text-align:center; }
+  .motion-axis.active { color:#77e1cb; }
+  .force { padding:14px 18px; border-top:1px solid #2a3c47; }
+  .force p { font-size:13px; margin:0; }
+  .force meter { display:block; width:100%; height:12px; margin-top:8px; }
+  .force meter[hidden] { display:none; }
+  .force meter::-webkit-meter-optimum-value { background:#77e1cb; }
+  #pinch-state { margin-left:12px; }
+  #pinch-state[data-state="light"] { color:#56ef8f; }
+  #pinch-state[data-state="hard"] { color:#ff5353; }
+  pre { font:12px ui-monospace,monospace; overflow:auto; color:#b8cdd2; }
+  details { margin-top:12px; color:#a9bec6; font-size:13px; }
+  summary { cursor:pointer; }
+  details p { display:flex; flex-wrap:wrap; gap:5px 16px; }
+  .hint { margin-top:13px; font-size:13px; }
+  @media (max-width:580px) { .readouts { grid-template-columns:1fr; } .readouts section + section { border-left:0; border-top:1px solid #2a3c47; } }
+</style>
+<script src="glove.js?v=10" defer></script>
+</head>
+<body>
+<main>
+  <header>
+    <div><h1>Gesture Glove</h1><p>Left-hand orientation over USB</p></div>
+    <div class="actions">
+      <button id="connect" class="primary">Connect XIAO</button>
+      <button id="neutral" disabled>Set neutral</button>
+      <button id="demo">Try demo</button>
+    </div>
+  </header>
+  <div class="panel">
+    <div class="status" id="status" role="status"><span class="dot"></span><span id="status-text">Waiting for the XIAO</span></div>
+    <canvas id="hand" role="img" aria-label="Rotating left glove with a breadboard and XIAO mounted on the back"></canvas>
+    <div class="readouts">
+      <section><h2>Rotation · about X / Y / Z</h2><output id="angles">—</output></section>
+      <section><h2>Linear acceleration · X / Y / Z (g)</h2><output id="accel">—</output></section>
+      <section><h2>Angular rate · X / Y / Z (°/s)</h2><output id="gyro">—</output></section>
+    </div>
+    <section class="force">
+      <h2 id="force-label">Thumb pressure · ADC counts</h2>
+      <p><output id="force-reading">Waiting for sensor data</output><output id="pinch-state">—</output></p>
+      <meter id="force-meter" aria-labelledby="force-label" min="0" max="4095" value="0" hidden></meter>
+    </section>
+    <div class="motion" role="group" aria-label="Gesture direction">
+      <div class="motion-axis" id="motion-x"><strong>X</strong><span class="motion-glyph" aria-hidden="true">·</span><span class="motion-direction">—</span></div>
+      <div class="motion-axis" id="motion-y"><strong>Y</strong><span class="motion-glyph" aria-hidden="true">·</span><span class="motion-direction">—</span></div>
+      <div class="motion-axis" id="motion-z"><strong>Z</strong><span class="motion-glyph" aria-hidden="true">·</span><span class="motion-direction">—</span></div>
+    </div>
+  </div>
+  <p class="hint">Hold the XIAO upright with the component side facing you and the USB cable on the left. Select Set neutral and hold still for a second. +X is right, +Y is up, and +Z is toward you.</p>
+  <details><summary>Live sensor JSON</summary><pre id="sample-json">Waiting for sensor data</pre></details>
+  <details><summary>Raw chip axes</summary>
+    <p><span>Acceleration (g) <output id="raw-accel">—</output></span><span>Angular rate (°/s) <output id="raw-gyro">—</output></span></p>
+  </details>
+</main>
+</body>
+</html>

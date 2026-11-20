@@ -1,0 +1,19 @@
+{
+  "title": "Strawberry Patrol",
+  "gridSize": 3,
+  "roundSeconds": 60,
+  "spawnEveryMs": 1400,
+  "moldProbability": 0.4,
+  "moldLifetimeMs": 7000,
+  "healthyLifetimeMs": null,
+  "pointsPerSquish": 10,
+  "lives": 3,
+  "pinchThresholdAdc": 80,
+  "releaseThresholdAdc": 50,
+  "controls": {
+    "aim": "Angular rate: tilt left/right to move sideways; breadboard up/down to move up/down",
+    "squish": "Pinch after aiming at a moldy strawberry",
+    "deadzoneDps": 6,
+    "degreesPerCell": 8
+  }
+}
